@@ -1,16 +1,13 @@
-import type { Tool, Schema } from "ai";
-import type {
-  ZodUnknownSchema,
-  ValidationSchema,
-  StandardRecord,
-} from "./typeAliases.js";
+import type { Tool } from "ai";
+import type { ValidationSchema, StandardRecord } from "./typeAliases.js";
 import type {
   AIProviderName,
   AnalyticsData,
   EvaluationData,
 } from "../core/types.js";
-import type { UnknownRecord, Unknown, JsonValue } from "./common.js";
+import type { UnknownRecord, JsonValue } from "./common.js";
 import type { ChatMessage } from "./conversationTypes.js";
+import type { TextContent, ImageContent } from "./content.js";
 
 /**
  * Interface for tool execution calls (AI SDK compatible)
@@ -78,7 +75,12 @@ export interface StreamAnalyticsData {
  * Future-ready for multi-modal capabilities while maintaining text focus
  */
 export interface StreamOptions {
-  input: { text: string }; // Current scope: text input
+  input: {
+    text: string;
+    // New multimodal support - zero breaking changes
+    images?: Array<Buffer | string>; // Simple image support
+    content?: Array<TextContent | ImageContent>; // Advanced multimodal content
+  };
   output?: {
     format?: "text" | "structured" | "json";
     streaming?: {

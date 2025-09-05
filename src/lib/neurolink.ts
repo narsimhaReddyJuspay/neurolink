@@ -11,7 +11,7 @@ import { config as dotenvConfig } from "dotenv";
 
 try {
   dotenvConfig(); // Load .env from current working directory
-} catch (error) {
+} catch (_error) {
   // Environment variables should be set externally in production
 }
 
@@ -59,7 +59,7 @@ import {
   createCleanStreamOptions,
 } from "./utils/factoryProcessing.js";
 // Tool detection and execution imports
-import type { NeuroLinkExecutionContext } from "./mcp/factory.js";
+import type { NeuroLinkExecutionContext as _NeuroLinkExecutionContext } from "./mcp/factory.js";
 // Transformation utilities
 import {
   transformToolExecutions,
@@ -379,12 +379,12 @@ export class NeuroLink {
       );
     }
 
-    const startTime = Date.now();
+    const _startTime = Date.now();
 
     // Emit generation start event
     this.emitter.emit("generation:start", {
       provider: options.provider || "auto",
-      timestamp: startTime,
+      timestamp: _startTime,
     });
 
     // Process factory configuration
@@ -401,7 +401,7 @@ export class NeuroLink {
       }
     }
 
-    // Convert to TextGenerationOptions using factory utilities
+    // 🔧 CRITICAL FIX: Convert to TextGenerationOptions while preserving the input object for multimodal support
     const baseOptions: TextGenerationOptions = {
       prompt: options.input.text,
       provider: options.provider as AIProviderName,
@@ -415,6 +415,7 @@ export class NeuroLink {
       context: options.context as Record<string, JsonValue> | undefined,
       evaluationDomain: options.evaluationDomain,
       toolUsageContext: options.toolUsageContext,
+      input: options.input, // This includes text, images, and content arrays
     };
 
     // Apply factory enhancement using centralized utilities
@@ -445,7 +446,7 @@ export class NeuroLink {
     // Emit generation completion event
     this.emitter.emit("generation:end", {
       provider: textResult.provider,
-      responseTime: Date.now() - startTime,
+      responseTime: Date.now() - _startTime,
       toolsUsed: textResult.toolsUsed,
       timestamp: Date.now(),
     });
@@ -846,7 +847,7 @@ export class NeuroLink {
    */
   private async detectAndExecuteTools(
     prompt: string,
-    domainType?: string,
+    _domainType?: string,
   ): Promise<ToolExecutionResult> {
     const functionTag = "NeuroLink.detectAndExecuteTools";
 

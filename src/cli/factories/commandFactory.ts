@@ -2,15 +2,8 @@ import type { CommandModule, Argv } from "yargs";
 import { NeuroLink } from "../../lib/neurolink.js";
 import type { AIProviderName } from "../../lib/index.js";
 import type { UnknownRecord, JsonValue } from "../../lib/types/common.js";
-import type {
-  BaseCommandArgs,
-  GenerateCommandArgs,
-  StreamCommandArgs,
-  GenerateResult,
-  CommandResult,
-  OutputOptions,
-} from "../../lib/types/cli.js";
-import type { TokenUsage, AnalyticsData } from "../../lib/types/providers.js";
+import type { BaseCommandArgs, GenerateResult } from "../../lib/types/cli.js";
+import type { AnalyticsData } from "../../lib/types/providers.js";
 
 // Interface for tokens with simplified property names (as used in analytics)
 interface AnalyticsTokens {
@@ -64,6 +57,7 @@ interface CLICommandArgs extends BaseCommandArgs {
   noColor?: boolean;
   configFile?: string;
   dryRun?: boolean;
+  image?: string | string[]; // Support for image files
   [key: string]: unknown;
 }
 
@@ -94,6 +88,12 @@ export class CLICommandFactory {
       default: "auto",
       description: "AI provider to use (auto-selects best available)",
       alias: "p",
+    },
+    image: {
+      type: "string" as const,
+      description:
+        "Add image file for multimodal analysis (can be used multiple times)",
+      alias: "i",
     },
     model: {
       type: "string" as const,
@@ -230,6 +230,22 @@ export class CLICommandFactory {
       ...this.commonOptions,
       ...additionalOptions,
     });
+  }
+
+  // Helper method to process CLI images with smart auto-detection
+  private static processCliImages(
+    images?: string | string[],
+  ): Array<Buffer | string> | undefined {
+    if (!images) {
+      return undefined;
+    }
+
+    const imagePaths = Array.isArray(images) ? images : [images];
+
+    // Return as-is - let the smart message builder handle URL vs file detection
+    // URLs will be detected and appended to prompt text
+    // File paths will be converted to base64 by the message builder
+    return imagePaths;
   }
 
   // Helper method to process common options
@@ -941,8 +957,13 @@ export class CLICommandFactory {
         });
       }
 
+      // Process CLI images if provided
+      const imageBuffers = CLICommandFactory.processCliImages(argv.image);
+
       const result = await sdk.generate({
-        input: { text: inputText },
+        input: imageBuffers
+          ? { text: inputText, images: imageBuffers }
+          : { text: inputText },
         provider: options.provider,
         model: options.model,
         temperature: options.temperature,
@@ -1150,8 +1171,14 @@ export class CLICommandFactory {
       }
 
       const sdk = new NeuroLink();
+
+      // Process CLI images if provided
+      const imageBuffers = CLICommandFactory.processCliImages(argv.image);
+
       const stream = await sdk.stream({
-        input: { text: inputText },
+        input: imageBuffers
+          ? { text: inputText, images: imageBuffers }
+          : { text: inputText },
         provider: options.provider,
         model: options.model,
         temperature: options.temperature,
